@@ -1,0 +1,4 @@
+is_global = true
+
+# https://rules.sonarsource.com/csharp/RSPEC-3904/ - Assemblies should have version information
+dotnet_diagnostic.S3904.severity = none
