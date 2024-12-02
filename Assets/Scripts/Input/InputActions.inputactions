@@ -1,0 +1,66 @@
+{
+    "name": "InputActions",
+    "maps": [
+        {
+            "name": "InGame",
+            "id": "6a9cd33c-c92e-4a3f-9dc9-05b7e4795e5b",
+            "actions": [
+                {
+                    "name": "Place",
+                    "type": "Button",
+                    "id": "b05869a8-717b-4b25-9026-e9d997d4fc6c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Move",
+                    "type": "Value",
+                    "id": "b065f13e-7d87-41d2-a0a6-90eb3156fcad",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "36d2db8e-d07b-4326-92e5-eb79ff251f50",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Mouse",
+                    "action": "Place",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c8339d33-e034-4769-a25e-99c1c485b5a7",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Mouse",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": [
+        {
+            "name": "Mouse",
+            "bindingGroup": "Mouse",
+            "devices": [
+                {
+                    "devicePath": "<Mouse>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        }
+    ]
+}
