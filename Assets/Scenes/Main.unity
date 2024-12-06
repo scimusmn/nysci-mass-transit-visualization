@@ -579,6 +579,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77091533c2f91ec48b1f19c4977c3694, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  geoJson: {fileID: 4900000, guid: fc4d09f8b54013a4f9aff3b382d69b6b, type: 3}
+  neighborhoodsCSV: {fileID: 4900000, guid: 474456fd908b0764bab1c5874a557ed9, type: 3}
   lineRendererPrefab: {fileID: 5664424051899227034, guid: 60766902037a27a4797bd56d43faf505,
     type: 3}
   neighborhoodsLineWidth: 0.05
@@ -669,8 +671,9 @@ MonoBehaviour:
   lineRendererPrefab: {fileID: 5664424051899227034, guid: 60766902037a27a4797bd56d43faf505,
     type: 3}
   transitLineWidth: 0.1
-  systemIsochroneLineWidth: 0.05
-  systemIsochroneColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 1}
+  systemTravelShedLineWidth: 0.05
+  systemTravelShedColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 1}
+  showSystemTravelShedOutline: 1
 --- !u!4 &1018025795
 Transform:
   m_ObjectHideFlags: 0

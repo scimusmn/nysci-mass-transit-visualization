@@ -6,7 +6,6 @@ using Clipper2Lib;
 
 namespace SMM
 {
-    // TODO : rename to 'manager' since handling more than generating lines now?
     public class TransitLineGenerator : MonoBehaviour
     {
         private class TransitLine
@@ -40,9 +39,13 @@ namespace SMM
         [SerializeField]
         private float transitLineWidth = 0.1f;
         [SerializeField]
-        private float systemIsochroneLineWidth = 0.05f;
+        private float systemTravelShedLineWidth = 0.05f;
         [SerializeField]
-        private Color systemIsochroneColor = Color.white;
+        private Color systemTravelShedColor = Color.white;
+#if UNITY_EDITOR
+        [SerializeField]
+        private bool showSystemTravelShedOutline = false;
+#endif
 
 
         [NonSerialized]
@@ -56,7 +59,7 @@ namespace SMM
         [NonSerialized]
         private const float PositionZ = -0.015f;
         [NonSerialized]
-        private const float SystemIsochronePositionZ = -0.01f;
+        private const float SystemTravelShedPositionZ = -0.01f;
 
 
         protected void OnEnable()
@@ -67,7 +70,7 @@ namespace SMM
             // TODO : instantiate transit lines from loaded file instead of placeholder lines
             SetupTransitLine(Clipper.MakePath(new double[] { -1.5, 1, 0, 1, 1.5, 1 }), new Color(0.953f, 0.435f, 0.318f, 1.0f));
             SetupTransitLine(Clipper.MakePath(new double[] { -1.5, -1, 0, -1, 1.5, -1 }), new Color(0.337f, 0.722f, 0.914f, 1.0f));
-            SetupSystemIsochrone();
+            SetupSystemTravelShed();
             CalculatePopulationServed();
         }
 
@@ -86,23 +89,27 @@ namespace SMM
 
         private void SetupTransitLine(PathD path, Color color)
         {
-            var lineRenderer = PathUtils.PathDToLineRenderer(
+            var (gameObject, lineRenderer) = PathUtils.PathDToLineRenderer(
                 path, lineRendererPrefab, map.transform,
                 name, color, transitLineWidth, PositionZ);
-            transitLines.Add(new TransitLine(lineRenderer.gameObject, lineRenderer));
+            transitLines.Add(new TransitLine(gameObject, lineRenderer));
         }
 
-        private void SetupSystemIsochrone()
+        private void SetupSystemTravelShed()
         {
             // TODO : replace with real data. This placeholder has no correlatation to the system on screen currently.
+            // Just places a large rectangle in middle of map for testing purposes if .
             var path = Clipper.MakePath(new double[] { -4, -4.1, -4, 0.1, 1, 0.1, 1, -4.1, -4, -4.1 });
-            var lineRenderer = PathUtils.PathDToLineRenderer(
+            systemIsochrone.path = path;
+#if UNITY_EDITOR
+            if (!showSystemTravelShedOutline) { return; }
+            var (gameObject, lineRenderer) = PathUtils.PathDToLineRenderer(
                 path,
                 lineRendererPrefab, map.transform, "Transit System Isochrone",
-                systemIsochroneColor, systemIsochroneLineWidth, SystemIsochronePositionZ);
-            systemIsochrone.path = path;
+                systemTravelShedColor, systemTravelShedLineWidth, SystemTravelShedPositionZ);
             systemIsochrone.lineRenderer = lineRenderer;
-            systemIsochrone.gameObject = lineRenderer.gameObject;
+            systemIsochrone.gameObject = gameObject;
+#endif
         }
 
         private void OnPlace()
@@ -159,22 +166,22 @@ namespace SMM
                 lineRenderer.SetPositions(newPositions);
             }
 
-            CalculateSystemIsochrone();
+            CalculateSystemTravelShed();
             CalculatePopulationServed();
         }
 
-        private void CalculateSystemIsochrone()
+        private void CalculateSystemTravelShed()
         {
-            // TODO : update system isochrone as new stops are added
+            // TODO : update total system travel shed as new stops are added
         }
 
         private void CalculatePopulationServed()
         {
             totalPopulationServed = 0;
-            foreach (var neighborhood in neighborhoodsManager.Neighborhoods)
+            foreach (var neighborhood in neighborhoodsManager.Neighborhoods.Values)
             {
-                double neighborhoodArea = Math.Abs(Clipper.Area(neighborhood.Line.path)); // area could be negative depending on path's winding orientation
-                PathsD intersection = Clipper.Intersect(new PathsD() { neighborhood.Line.path }, new PathsD() { systemIsochrone.path }, FillRule.NonZero);
+                double neighborhoodArea = Math.Abs(Clipper.Area(neighborhood.Path)); // area could be negative depending on path's winding orientation
+                PathsD intersection = Clipper.Intersect(new PathsD() { neighborhood.Path }, new PathsD() { systemIsochrone.path }, FillRule.NonZero);
                 if (intersection.Count == 0) { continue; }
 
                 double intersectionArea = Clipper.Area(intersection);
