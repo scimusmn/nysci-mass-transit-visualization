@@ -8,20 +8,38 @@ namespace SMM
 {
     public class TransitLineGenerator : MonoBehaviour
     {
+        private class Stop
+        {
+            private GameObject gameObject;
+            private string name;
+
+            public GameObject GameObject { get => gameObject; set => gameObject = value; }
+            public string Name { get => name; set => name = value; }
+
+            public Stop(GameObject gameObject, string name)
+            {
+                this.gameObject = gameObject;
+                this.name = name;
+            }
+        }
+
         private class TransitLine
         {
             private GameObject gameObject;
             private LineRenderer lineRenderer;
+            private List<Stop> stops;
 
 
             public GameObject GameObject { get => gameObject; set => gameObject = value; }
             public LineRenderer LineRenderer { get => lineRenderer; set => lineRenderer = value; }
+            public List<Stop> Stops { get => stops; set => stops = value; }
 
 
-            public TransitLine(GameObject gameObject, LineRenderer lineRenderer)
+            public TransitLine(GameObject gameObject, LineRenderer lineRenderer, List<Stop> stops)
             {
                 this.gameObject = gameObject;
                 this.lineRenderer = lineRenderer;
+                this.stops = stops;
             }
         }
 
@@ -38,6 +56,8 @@ namespace SMM
         private GameObject lineRendererPrefab = null;
         [SerializeField]
         private float transitLineWidth = 0.1f;
+        [SerializeField]
+        private GameObject stopPrefab = null;
         [SerializeField]
         private float systemTravelShedLineWidth = 0.05f;
         [SerializeField]
@@ -68,8 +88,15 @@ namespace SMM
             inputController.Place += OnPlace;
 
             // TODO : instantiate transit lines from loaded file instead of placeholder lines
-            SetupTransitLine(Clipper.MakePath(new double[] { -1.5, 1, 0, 1, 1.5, 1 }), new Color(0.953f, 0.435f, 0.318f, 1.0f));
-            SetupTransitLine(Clipper.MakePath(new double[] { -1.5, -1, 0, -1, 1.5, -1 }), new Color(0.337f, 0.722f, 0.914f, 1.0f));
+            // TODO : create stops from loaded file instead of placeholder stops
+            SetupTransitLine(
+                Clipper.MakePath(new double[] { -1.5, 1, 0, 1, 1.5, 1 }),
+                new Color(0.953f, 0.435f, 0.318f, 1.0f),
+                new List<(string, Vector2)> { ("Stop 1", new Vector2(-1.5f, 1f)), ("Stop 2", new Vector2(-0.75f, 1f)), ("Stop 3", new Vector2(0f, 1f)), ("Stop 4", new Vector2(1.5f, 1f)) });
+            SetupTransitLine(
+                Clipper.MakePath(new double[] { -1.5, -1, 0, -1, 1.5, -1 }),
+                new Color(0.337f, 0.722f, 0.914f, 1.0f),
+                new List<(string, Vector2)> { ("Stop 5", new Vector2(-1.5f, -1f)), ("Stop 6", new Vector2(0f, -1f)), ("Stop 7", new Vector2(1.5f, -1f)) });
             SetupSystemTravelShed();
             CalculatePopulationServed();
         }
@@ -79,6 +106,11 @@ namespace SMM
             inputController.Place -= OnPlace;
             foreach (var transitLine in transitLines)
             {
+                foreach (var stop in transitLine.Stops)
+                {
+                    Destroy(stop.GameObject);
+                }
+                transitLine.Stops.Clear();
                 Destroy(transitLine.GameObject);
             }
             transitLines.Clear();
@@ -87,18 +119,31 @@ namespace SMM
         }
 
 
-        private void SetupTransitLine(PathD path, Color color)
+        private void SetupTransitLine(PathD path, Color color, List<(string, Vector2)> stops)
         {
             var (gameObject, lineRenderer) = PathUtils.PathDToLineRenderer(
                 path, lineRendererPrefab, map.transform,
                 name, color, transitLineWidth, PositionZ);
-            transitLines.Add(new TransitLine(gameObject, lineRenderer));
+            transitLines.Add(new TransitLine(gameObject, lineRenderer, SetupStops(stops, gameObject.transform)));
+        }
+
+        private List<Stop> SetupStops(List<(string name, Vector2 location)> stops, Transform parent)
+        {
+            List<Stop> stopObjects = new List<Stop>(stops.Count);
+            foreach (var stop in stops)
+            {
+                var gameObject = Instantiate(stopPrefab, parent, true);
+                gameObject.name = stop.name;
+                gameObject.transform.localPosition = new Vector3(stop.location.x, stop.location.y, PositionZ - 0.01f);
+                stopObjects.Add(new Stop(gameObject, stop.name));
+            }
+            return stopObjects;
         }
 
         private void SetupSystemTravelShed()
         {
             // TODO : replace with real data. This placeholder has no correlatation to the system on screen currently.
-            // Just places a large rectangle in middle of map for testing purposes if .
+            // Just places a large rectangle in middle of map for testing purposes.
             var path = Clipper.MakePath(new double[] { -4, -4.1, -4, 0.1, 1, 0.1, 1, -4.1, -4, -4.1 });
             systemIsochrone.path = path;
 #if UNITY_EDITOR
@@ -110,6 +155,14 @@ namespace SMM
             systemIsochrone.lineRenderer = lineRenderer;
             systemIsochrone.gameObject = gameObject;
 #endif
+        }
+
+        private void InsertNewStop(string name, Vector2 location, int index, TransitLine transitLine)
+        {
+            var gameObject = Instantiate(stopPrefab, transitLine.GameObject.transform, true);
+            gameObject.name = name;
+            gameObject.transform.localPosition = new Vector3(location.x, location.y, PositionZ - 0.01f);
+            transitLine.Stops.Insert(index, new Stop(gameObject, name));
         }
 
         private void OnPlace()
@@ -164,6 +217,7 @@ namespace SMM
                 Array.Copy(positions, 0, newPositions, copyToIndex, positionCount);
                 lineRenderer.positionCount++;
                 lineRenderer.SetPositions(newPositions);
+                InsertNewStop("New Stop", mousePosition, finalPositionIndex, closestLine); // TODO : give names to new stops
             }
 
             CalculateSystemTravelShed();

@@ -675,6 +675,8 @@ MonoBehaviour:
   lineRendererPrefab: {fileID: 5664424051899227034, guid: 60766902037a27a4797bd56d43faf505,
     type: 3}
   transitLineWidth: 0.1
+  stopPrefab: {fileID: 7870462002428847294, guid: 3dc09969b1ede15409f98970977e7f2b,
+    type: 3}
   systemTravelShedLineWidth: 0.05
   systemTravelShedColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 1}
   showSystemTravelShedOutline: 1
