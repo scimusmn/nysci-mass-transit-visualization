@@ -59,7 +59,7 @@ namespace SMM
 
 
         [NonSerialized]
-        private Dictionary<string, Neighborhood> neighborhoods = new Dictionary<string, Neighborhood>();
+        private readonly Dictionary<string, Neighborhood> neighborhoods = new Dictionary<string, Neighborhood>();
         [NonSerialized]
         private double mapWidth = 0;
         [NonSerialized]
@@ -72,7 +72,7 @@ namespace SMM
         private const int ColumnsCSV = 6;
 
 
-        public Dictionary<string, Neighborhood> Neighborhoods { get => neighborhoods; set => neighborhoods = value; }
+        public Dictionary<string, Neighborhood> Neighborhoods { get => neighborhoods; }
 
 
         protected void Awake()
@@ -104,7 +104,7 @@ namespace SMM
                 ConvertLatLongToXYPlane(ref coordinates, jsonCoordinates);
                 neighborhoods.Add(
                     feature.Properties.NtaName,
-                    new Neighborhood(feature.Properties.NtaName, 1000, Clipper.MakePath(coordinates), null, null));
+                    new Neighborhood(feature.Properties.NtaName, 0, Clipper.MakePath(coordinates), null, null));
             }
 
             string[] data = neighborhoodsCSV.text.Split(new string[] { ",", "\n" }, StringSplitOptions.None);
