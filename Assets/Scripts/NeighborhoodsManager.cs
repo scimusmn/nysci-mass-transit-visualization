@@ -5,7 +5,6 @@ using Newtonsoft.Json;
 using Clipper2Lib;
 using SMM.JsonTypes;
 
-
 namespace SMM
 {
     public class NeighborhoodsManager : MonoBehaviour
@@ -14,7 +13,6 @@ namespace SMM
         {
             private string name;
             private int population;
-            private int year;
             private PathD path;
             private GameObject gameObject;
             private LineRenderer lineRenderer;
@@ -22,17 +20,15 @@ namespace SMM
 
             public string Name { readonly get => name; set => name = value; }
             public int Population { readonly get => population; set => population = value; }
-            public int Year { readonly get => year; set => year = value; }
             public PathD Path { readonly get => path; set => path = value; }
             public GameObject GameObject { readonly get => gameObject; set => gameObject = value; }
             public LineRenderer LineRenderer { readonly get => lineRenderer; set => lineRenderer = value; }
 
 
-            public Neighborhood(string name, int population, int year, PathD path, GameObject gameObject, LineRenderer lineRenderer)
+            public Neighborhood(string name, int population, PathD path, GameObject gameObject, LineRenderer lineRenderer)
             {
                 this.name = name;
                 this.population = population;
-                this.year = year;
                 this.path = path;
                 this.gameObject = gameObject;
                 this.lineRenderer = lineRenderer;
@@ -47,7 +43,7 @@ namespace SMM
         [SerializeField]
         private double eastExtentMap = -73.699215;
         [SerializeField]
-        private double northExtentMap = -73.699215;
+        private double northExtentMap = 40.915568;
         [SerializeField]
         private double southExtentMap = 40.496010;
         [SerializeField]
@@ -79,11 +75,10 @@ namespace SMM
         public Dictionary<string, Neighborhood> Neighborhoods { get => neighborhoods; set => neighborhoods = value; }
 
 
-        protected void OnEnable()
+        protected void Awake()
         {
             mapWidth = map.transform.localScale.x;
             mapHeight = map.transform.localScale.y;
-            Debug.Log("map width: " + mapWidth + " " + "map height: " + mapHeight);
             SetupNeighborhoods();
         }
 
@@ -106,42 +101,23 @@ namespace SMM
                 var jsonCoordinates = feature.Geometry.Coordinates[0][0];
                 int coordinatesCount = jsonCoordinates.Count * 2; // vector2 per coordinate
                 double[] coordinates = new double[coordinatesCount];
-                for (int i = 0, j = 0; i < jsonCoordinates.Count; i++, j += 2)
-                {
-                    double xCoord = jsonCoordinates[i][1]; // GeoJSON orders the coordinates as "longitude, latitude"
-                    double yCoord = jsonCoordinates[i][0];
-                    xCoord = MathUtils.Remap(xCoord, westExtentMap, eastExtentMap, (-mapWidth / 2), mapWidth / 2);
-                    yCoord = MathUtils.Remap(yCoord, southExtentMap, northExtentMap, (-mapHeight / 2), mapHeight / 2);
-                    coordinates[j] = xCoord;
-                    coordinates[j + 1] = yCoord;
-                }
+                ConvertLatLongToXYPlane(ref coordinates, jsonCoordinates);
                 neighborhoods.Add(
                     feature.Properties.NtaName,
-                    new Neighborhood(feature.Properties.NtaName, 0, 0, Clipper.MakePath(coordinates), null, null));
+                    new Neighborhood(feature.Properties.NtaName, 1000, Clipper.MakePath(coordinates), null, null));
             }
 
             string[] data = neighborhoodsCSV.text.Split(new string[] { ",", "\n" }, StringSplitOptions.None);
             for (int i = ColumnsCSV - 1; i < (data.Length - ColumnsCSV); i += ColumnsCSV)
             {
                 string ntaName = data[i + 5];
-                // TODO : remove once done fixing coordinates range
-                if (ntaName == "Greenpoint")
-                {
-                    if (neighborhoods.TryGetValue(ntaName, out var neighborhood))
-                    {
-                        neighborhood.Population = int.Parse(data[i + 6]);
-                        CreateNeighborhoodObject(ref neighborhood);
-                        return;
-                    }
-                }
-                // TODO : add back in once done testing what is happening with coordinates
-                /* if (neighborhoods.TryGetValue(ntaName, out var neighborhood))
+                if (neighborhoods.TryGetValue(ntaName, out var neighborhood))
                 {
                     neighborhood.Population = int.Parse(data[i + 6]);
                     CreateNeighborhoodObject(ref neighborhood);
-                } */
+                }
             }
-            // TODO : how to check that every neighborhood in dictonary has a population number?
+            // TODO : check that every neighborhood in dictionary has population number
         }
 
         private void CreateNeighborhoodObject(ref Neighborhood neighborhood)
@@ -151,6 +127,21 @@ namespace SMM
                 neighborhood.Name, neighborhoodsColor, neighborhoodsLineWidth, PositionZ);
             neighborhood.GameObject = gameObject;
             neighborhood.LineRenderer = lineRenderer;
+        }
+
+        private void ConvertLatLongToXYPlane(ref double[] coordinates, List<List<double>> jsonCoordinates)
+        {
+            for (int i = 0, j = 0; i < jsonCoordinates.Count; i++, j += 2)
+            {
+                double xT = (double)Mathf.InverseLerp((float)westExtentMap, (float)eastExtentMap, (float)jsonCoordinates[i][0]);
+                double xCoord = (xT - 0.5) * 2; // convert [0, 1] to [-1, 1]
+                xCoord *= (mapWidth / 2);
+                double yT = (double)Mathf.InverseLerp((float)southExtentMap, (float)northExtentMap, (float)jsonCoordinates[i][1]);
+                double yCoord = (yT - 0.5) * 2;
+                yCoord *= (mapHeight / 2);
+                coordinates[j] = xCoord;
+                coordinates[j + 1] = yCoord;
+            }
         }
     }
 }

@@ -580,11 +580,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   geoJson: {fileID: 4900000, guid: fc4d09f8b54013a4f9aff3b382d69b6b, type: 3}
+  westExtentMap: -74.257159
+  eastExtentMap: -73.699215
+  northExtentMap: 40.915568
+  southExtentMap: 40.49601
   neighborhoodsCSV: {fileID: 4900000, guid: 474456fd908b0764bab1c5874a557ed9, type: 3}
   lineRendererPrefab: {fileID: 5664424051899227034, guid: 60766902037a27a4797bd56d43faf505,
     type: 3}
-  neighborhoodsLineWidth: 0.05
-  neighborhoodsColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 1}
+  neighborhoodsLineWidth: 0.016
+  neighborhoodsColor: {r: 0, g: 0, b: 0, a: 1}
   map: {fileID: 178204760}
 --- !u!1 &832575517
 GameObject:
