@@ -535,6 +535,61 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 1
+--- !u!1 &694488318
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 694488319}
+  - component: {fileID: 694488320}
+  m_Layer: 0
+  m_Name: Neighborhood Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &694488319
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 694488318}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2092678980}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &694488320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 694488318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77091533c2f91ec48b1f19c4977c3694, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  geoJson: {fileID: 4900000, guid: fc4d09f8b54013a4f9aff3b382d69b6b, type: 3}
+  westExtentMap: -74.257159
+  eastExtentMap: -73.699215
+  northExtentMap: 40.915568
+  southExtentMap: 40.49601
+  neighborhoodsCSV: {fileID: 4900000, guid: 474456fd908b0764bab1c5874a557ed9, type: 3}
+  lineRendererPrefab: {fileID: 5664424051899227034, guid: 60766902037a27a4797bd56d43faf505,
+    type: 3}
+  neighborhoodsLineWidth: 0.016
+  neighborhoodsColor: {r: 0, g: 0, b: 0, a: 1}
+  map: {fileID: 178204760}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -614,18 +669,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inputController: {fileID: 258689148}
+  neighborhoodsManager: {fileID: 694488320}
   mainCamera: {fileID: 330585545}
   map: {fileID: 178204760}
-  positionsRedLine:
-  - {x: -1.5, y: 1}
-  - {x: 0, y: 1}
-  - {x: 1.5, y: 1}
-  positionsBlueLine:
-  - {x: -1.5, y: -1}
-  - {x: 0, y: -1}
-  - {x: 1.5, y: -1}
-  transitLinePrefab: {fileID: 5664424051899227034, guid: 60766902037a27a4797bd56d43faf505,
+  lineRendererPrefab: {fileID: 5664424051899227034, guid: 60766902037a27a4797bd56d43faf505,
     type: 3}
+  transitLineWidth: 0.1
+  systemTravelShedLineWidth: 0.05
+  systemTravelShedColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 1}
+  showSystemTravelShedOutline: 1
 --- !u!4 &1018025795
 Transform:
   m_ObjectHideFlags: 0
@@ -672,6 +724,7 @@ Transform:
   m_Children:
   - {fileID: 1018025795}
   - {fileID: 258689149}
+  - {fileID: 694488319}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
