@@ -8,13 +8,13 @@ namespace SMM
 {
     public class TransitLineGenerator : MonoBehaviour
     {
-        private class Stop
+        private readonly struct Stop
         {
-            private GameObject gameObject;
-            private string name;
+            private readonly GameObject gameObject;
+            private readonly string name;
 
-            public GameObject GameObject { get => gameObject; set => gameObject = value; }
-            public string Name { get => name; set => name = value; }
+            public GameObject GameObject { get => gameObject; }
+            public string Name { get => name; }
 
             public Stop(GameObject gameObject, string name)
             {
@@ -27,12 +27,12 @@ namespace SMM
         {
             private GameObject gameObject;
             private LineRenderer lineRenderer;
-            private List<Stop> stops;
+            private readonly List<Stop> stops;
 
 
             public GameObject GameObject { get => gameObject; set => gameObject = value; }
             public LineRenderer LineRenderer { get => lineRenderer; set => lineRenderer = value; }
-            public List<Stop> Stops { get => stops; set => stops = value; }
+            public List<Stop> Stops { get => stops; }
 
 
             public TransitLine(GameObject gameObject, LineRenderer lineRenderer, List<Stop> stops)
@@ -79,6 +79,8 @@ namespace SMM
         [NonSerialized]
         private const float PositionZ = -0.015f;
         [NonSerialized]
+        private const float StopPositionZ = PositionZ - 0.01f;
+        [NonSerialized]
         private const float SystemTravelShedPositionZ = -0.01f;
 
 
@@ -119,7 +121,7 @@ namespace SMM
         }
 
 
-        private void SetupTransitLine(PathD path, Color color, List<(string, Vector2)> stops)
+        private void SetupTransitLine(PathD path, Color color, List<(string name, Vector2 location)> stops)
         {
             var (gameObject, lineRenderer) = PathUtils.PathDToLineRenderer(
                 path, lineRendererPrefab, map.transform,
@@ -134,7 +136,7 @@ namespace SMM
             {
                 var gameObject = Instantiate(stopPrefab, parent, true);
                 gameObject.name = stop.name;
-                gameObject.transform.localPosition = new Vector3(stop.location.x, stop.location.y, PositionZ - 0.01f);
+                gameObject.transform.localPosition = new Vector3(stop.location.x, stop.location.y, StopPositionZ);
                 stopObjects.Add(new Stop(gameObject, stop.name));
             }
             return stopObjects;
@@ -161,7 +163,7 @@ namespace SMM
         {
             var gameObject = Instantiate(stopPrefab, transitLine.GameObject.transform, true);
             gameObject.name = name;
-            gameObject.transform.localPosition = new Vector3(location.x, location.y, PositionZ - 0.01f);
+            gameObject.transform.localPosition = new Vector3(location.x, location.y, StopPositionZ);
             transitLine.Stops.Insert(index, new Stop(gameObject, name));
         }
 
