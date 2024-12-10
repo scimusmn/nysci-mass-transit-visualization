@@ -27,18 +27,21 @@ namespace SMM
         {
             private GameObject gameObject;
             private LineRenderer lineRenderer;
+            private AngledLineRenderer angledLineRenderer;
             private readonly List<Stop> stops;
 
 
             public GameObject GameObject { get => gameObject; set => gameObject = value; }
             public LineRenderer LineRenderer { get => lineRenderer; set => lineRenderer = value; }
+            public AngledLineRenderer AngledLineRenderer { get => angledLineRenderer; set => angledLineRenderer = value; }
             public List<Stop> Stops { get => stops; }
 
 
-            public TransitLine(GameObject gameObject, LineRenderer lineRenderer, List<Stop> stops)
+            public TransitLine(GameObject gameObject, LineRenderer lineRenderer, AngledLineRenderer angledLineRenderer, List<Stop> stops)
             {
                 this.gameObject = gameObject;
                 this.lineRenderer = lineRenderer;
+                this.angledLineRenderer = angledLineRenderer;
                 this.stops = stops;
             }
         }
@@ -56,6 +59,12 @@ namespace SMM
         private GameObject lineRendererPrefab = null;
         [SerializeField]
         private float transitLineWidth = 0.1f;
+        [SerializeField]
+        private float cornerRadius = 0.5f; // TODO : rename to outside points? Controls length of p0 and p3
+        [SerializeField]
+        private float smoothingLength = 0.005f; // TODO : rename
+        [SerializeField]
+        private int smoothingSections = 4; // TODO : rename
         [SerializeField]
         private GameObject stopPrefab = null;
         [SerializeField]
@@ -77,10 +86,6 @@ namespace SMM
 
 
         [NonSerialized]
-        private const float PositionZ = -0.015f;
-        [NonSerialized]
-        private const float StopPositionZ = PositionZ - 0.01f;
-        [NonSerialized]
         private const float SystemTravelShedPositionZ = -0.01f;
 
 
@@ -91,14 +96,16 @@ namespace SMM
 
             // TODO : instantiate transit lines from loaded file instead of placeholder lines
             // TODO : create stops from loaded file instead of placeholder stops
+
+            // TODO : change back after done testing
             SetupTransitLine(
-                Clipper.MakePath(new double[] { -1.5, 1, 0, 1, 1.5, 1 }),
+                Clipper.MakePath(new double[] { -1.5, 1, -1.5, 1.5, 1.5, 1.5 }),
                 new Color(0.953f, 0.435f, 0.318f, 1.0f),
-                new List<(string, Vector2)> { ("Stop 1", new Vector2(-1.5f, 1f)), ("Stop 2", new Vector2(-0.75f, 1f)), ("Stop 3", new Vector2(0f, 1f)), ("Stop 4", new Vector2(1.5f, 1f)) });
-            SetupTransitLine(
+                new List<(string, Vector2)> { ("Stop 1", new Vector2(-1.5f, 1f)), ("Stop 3", new Vector2(-1.5f, 1.5f)), ("Stop 4", new Vector2(1.5f, 1.5f)) });
+            /* SetupTransitLine(
                 Clipper.MakePath(new double[] { -1.5, -1, 0, -1, 1.5, -1 }),
                 new Color(0.337f, 0.722f, 0.914f, 1.0f),
-                new List<(string, Vector2)> { ("Stop 5", new Vector2(-1.5f, -1f)), ("Stop 6", new Vector2(0f, -1f)), ("Stop 7", new Vector2(1.5f, -1f)) });
+                new List<(string, Vector2)> { ("Stop 5", new Vector2(-1.5f, -1f)), ("Stop 6", new Vector2(0f, -1.5f)), ("Stop 7", new Vector2(1.5f, -1f)) }); */
             SetupSystemTravelShed();
             CalculatePopulationServed();
         }
@@ -123,10 +130,27 @@ namespace SMM
 
         private void SetupTransitLine(PathD path, Color color, List<(string name, Vector2 location)> stops)
         {
-            var (gameObject, lineRenderer) = PathUtils.PathDToLineRenderer(
-                path, lineRendererPrefab, map.transform,
-                name, color, transitLineWidth, PositionZ);
-            transitLines.Add(new TransitLine(gameObject, lineRenderer, SetupStops(stops, gameObject.transform)));
+            var (gameObject, lineRenderer) = SetupLineRenderer(
+                lineRendererPrefab, map.transform,
+                name, color, transitLineWidth);
+            transitLines.Add(new TransitLine(gameObject, lineRenderer,
+                new AngledLineRenderer(lineRenderer, path, cornerRadius, smoothingLength, smoothingSections),
+                SetupStops(stops, gameObject.transform)));
+        }
+
+        private (GameObject, LineRenderer) SetupLineRenderer(GameObject prefab, Transform parent,
+            string name, Color lineColor, float lineWidth)
+        {
+            var gameObject = Instantiate(prefab, parent, true);
+            gameObject.name = name;
+            if (gameObject.TryGetComponent(out LineRenderer lineRenderer))
+            {
+                lineRenderer.startColor = lineColor;
+                lineRenderer.endColor = lineColor;
+                lineRenderer.startWidth = lineWidth;
+                lineRenderer.endWidth = lineWidth;
+            }
+            return (gameObject, lineRenderer);
         }
 
         private List<Stop> SetupStops(List<(string name, Vector2 location)> stops, Transform parent)
@@ -136,7 +160,7 @@ namespace SMM
             {
                 var gameObject = Instantiate(stopPrefab, parent, true);
                 gameObject.name = stop.name;
-                gameObject.transform.localPosition = new Vector3(stop.location.x, stop.location.y, StopPositionZ);
+                gameObject.transform.localPosition = new Vector3(stop.location.x, stop.location.y, -0.115f);
                 stopObjects.Add(new Stop(gameObject, stop.name));
             }
             return stopObjects;
@@ -163,16 +187,21 @@ namespace SMM
         {
             var gameObject = Instantiate(stopPrefab, transitLine.GameObject.transform, true);
             gameObject.name = name;
-            gameObject.transform.localPosition = new Vector3(location.x, location.y, StopPositionZ);
-            transitLine.Stops.Insert(index, new Stop(gameObject, name));
+            gameObject.transform.localPosition = new Vector3(location.x, location.y, -0.115f);
+            if (index == 0)
+            {
+                transitLine.Stops.Insert(index, new Stop(gameObject, name));
+                return;
+            }
+            transitLine.Stops.Add(new Stop(gameObject, name));
         }
 
         private void OnPlace()
         {
             var mousePosition = mainCamera.ScreenToWorldPoint(inputController.MousePosition);
-            mousePosition.z = PositionZ;
+            mousePosition.z = -0.015f; // TODO : use const from angled line renderer?
 
-            int finalPositionIndex = -1;
+            int closestPositionIndex = -1;
             TransitLine closestLine = null;
             float closestSqrMagnitude = float.PositiveInfinity;
 
@@ -203,23 +232,14 @@ namespace SMM
                 {
                     closestLine = transitLine;
                     closestSqrMagnitude = sqrManitude;
-                    finalPositionIndex = positionIndex;
+                    closestPositionIndex = positionIndex;
                 }
             }
 
             if (closestLine != null)
             {
-                var lineRenderer = closestLine.LineRenderer;
-                int positionCount = lineRenderer.positionCount;
-                Vector3[] positions = new Vector3[positionCount];
-                lineRenderer.GetPositions(positions);
-                Vector3[] newPositions = new Vector3[positionCount + 1];
-                newPositions[finalPositionIndex] = mousePosition;
-                int copyToIndex = finalPositionIndex == 0 ? 1 : 0;
-                Array.Copy(positions, 0, newPositions, copyToIndex, positionCount);
-                lineRenderer.positionCount++;
-                lineRenderer.SetPositions(newPositions);
-                InsertNewStop("New Stop", mousePosition, finalPositionIndex, closestLine); // TODO : give names to new stops
+                Vector2 newPosition = closestLine.AngledLineRenderer.UpdateLine(mousePosition, closestPositionIndex);
+                InsertNewStop("New Stop", newPosition, closestPositionIndex, closestLine); // TODO : give names to new stops
             }
 
             CalculateSystemTravelShed();
@@ -247,5 +267,26 @@ namespace SMM
             // TODO : replace log with updating UI
             Debug.Log("total population served: " + totalPopulationServed);
         }
+
+#if UNITY_EDITOR
+        protected void OnDrawGizmos()
+        {
+            if (transitLines.Count == 0) { return; }
+            foreach (var curve in transitLines[0].AngledLineRenderer.Curves) // TODO : add support for all lines
+            {
+                Gizmos.color = Color.blue;
+                Gizmos.DrawSphere(curve.StartPosition, 0.1f);
+                Gizmos.color = Color.green;
+                Gizmos.DrawSphere(curve.EndPosition, 0.1f);
+                Gizmos.color = Color.red;
+                Gizmos.DrawSphere(curve.Points[1], 0.05f);
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawSphere(curve.Points[2], 0.05f);
+                Gizmos.DrawLine(curve.StartPosition, curve.Points[1]);
+                Gizmos.DrawLine(curve.Points[1], curve.Points[2]);
+                Gizmos.DrawLine(curve.Points[2], curve.EndPosition);
+            }
+        }
+#endif
     }
 }

@@ -675,6 +675,9 @@ MonoBehaviour:
   lineRendererPrefab: {fileID: 5664424051899227034, guid: 60766902037a27a4797bd56d43faf505,
     type: 3}
   transitLineWidth: 0.1
+  cornerRadius: 0.5
+  smoothingLength: 0.01
+  smoothingSections: 20
   stopPrefab: {fileID: 7870462002428847294, guid: 3dc09969b1ede15409f98970977e7f2b,
     type: 3}
   systemTravelShedLineWidth: 0.05

@@ -28,5 +28,10 @@ namespace SMM
             }
             return (gameObject, lineRenderer);
         }
+
+        public static Vector3 ConvertPointDToVector3(PointD point, float positionZ)
+        {
+            return new Vector3((float)point.x, (float)point.y, positionZ);
+        }
     }
 }
